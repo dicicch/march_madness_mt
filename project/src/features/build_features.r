@@ -27,18 +27,23 @@ strsplit(example_sub$id, "_")
 unlist(strsplit(example_sub$id, "_"))
   
 examp_sub <- data.table(matrix(unlist(strsplit(example_sub$id, "_")), ncol = 4, byrow = TRUE))
+rm(example_sub)
 head(examp_sub, n=5)
-setnames(examp_sub, c("V1", "V2", "V3", "V4"), c("season", "daynum", "team1", "team2"))
+setnames(examp_sub,
+         c("V1", "V2", "V3", "V4"),
+         c("Season", "DayNum", "Team1", "Team2"))
+examp_sub[,Season := as.integer(Season)]
+examp_sub[,DayNum := as.integer(DayNum)]
 head(examp_sub, n=5)
 examp_sub[, result := 0.5]
 head(examp_sub, n=5)
 
 # make train
-train <- rbind(RegularSeasonDetailedResults, NCAATourneyDetailedResults)
-train
-train <- train[,.(WTeamID, LTeamID, Season, DayNum)]
-setnames(train,c("WTeamID","LTeamID"),c("team_1","team_2"))
-train
+train <- rbind(season, tourney)
+head(train, n=5)
+train <- train[, .(WTeamID, LTeamID, Season, DayNum)]
+setnames(train, c("WTeamID","LTeamID"), c("Team1","Team2"))
+head(train, n=5)
 
 train$result <- 1
 
@@ -48,12 +53,12 @@ master <- rbind(train,examp_sub)
 master$team_1 <- as.character(master$team_1)
 master$team_2 <- as.character(master$team_2)
 
-MasseyOrdinals_thru_2019_day_128
+head(massey, n=5)
 
-MasseyOrdinals_thru_2019_day_128$DayNum <- MasseyOrdinals_thru_2019_day_128$RankingDayNum + 1
-MasseyOrdinals_thru_2019_day_128
-pom_ranks <- MasseyOrdinals_thru_2019_day_128[SystemName == "POM", .(Season, DayNum, TeamID, OrdinalRank)]
-pom_ranks
+massey$DayNum <- massey$RankingDayNum + 1
+head(massey, n=5)
+pom_ranks <- massey[SystemName == "POM", .(Season, DayNum, TeamID, OrdinalRank)]
+head(pom_ranks, n=5)
 setnames(pom_ranks, "TeamID", "team_1")
 
 pom_ranks
@@ -62,13 +67,12 @@ pom_ranks$team_1 <- as.character(pom_ranks$team_1)
 setkey(master, Season,team_1, DayNum)
 setkey(pom_ranks, Season, team_1, DayNum)
 
-master
-pom_ranks
+head(master)
+head(pom_ranks)
 
 master <- pom_ranks[master, roll = T]
 master
 setnames(master,"OrdinalRank", "team_1_POM")
-
 
 setnames(pom_ranks,"team_1","team_2")
 setkey(master,Season,team_2,DayNum)
